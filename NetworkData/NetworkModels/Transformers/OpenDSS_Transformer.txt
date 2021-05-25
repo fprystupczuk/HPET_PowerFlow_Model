@@ -1,0 +1,13 @@
+! For 3-phase transformers the kVAs parameters are the kVA per winding multiplied by 3
+New Transformer.TR1 phases=3 windings=2 Tap=1 Buses=[primary secondary]
+~ Conns=[Delta Wye] kVs=[10.0 0.4] kVAs=[800 800] %Noloadloss=0.08125 %Loadloss=0.875 X12=6
+New Monitor.LFT-VI Transformer.TR1 Terminal=2 mode=0 VIpolar=Yes
+New Monitor.LFT-PQ Transformer.TR1 Terminal=2 mode=1 ppolar=no
+
+/*
+Siemens liquid-immersed distribution transformer FITformer: 800kVA,10kV/400V
+Obtained from Siemens Power Engineering Guide Edition 8.0
+Impedance voltage: 6%
+No-load losses: 650 W (0.08125%)
+Load losses @75°C: 7000 W (0.875%)
+*/

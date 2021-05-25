@@ -1,0 +1,8 @@
+# Efficiency curve taken from Adabi, M. and Martinez-Velasco, J. "MMC-Based Solid-State Transformer Model Including Semiconductor Losses". Electrical Engineering journal. 2018.
+# corresponding to a three-stage Solid-State Transformer at unity power factor
+0,0
+0.2,0.833248039620306
+0.4,0.888708212959141
+0.6,0.892998906314486
+0.8,0.896673545191911
+1,0.897432934378869

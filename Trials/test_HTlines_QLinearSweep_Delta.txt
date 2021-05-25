@@ -1,0 +1,97 @@
+clear
+
+Set DefaultBaseFrequency=50
+
+New circuit.LV_Network bus1=primary BasekV=10.0 pu=1.0 Angle=0.0 phases=3 ISC3=99999999999 Isc1=99999999999
+
+
+/********* HYBRID TRANSFORMER MODEL **********
+(see file HybridTrafo3onnections.jpg for a graphical description)
+Three-phase three-winding transformer composed by 3 single-phase three-winding transformers
+First winding: delta - Second winding: series connection - Third winding: delta */
+
+! VARIABLES
+var @kVs_prim_pp=10.0               ! Nominal phase-to-phase voltage for primary windings
+var @kVs_sec_pp=0.4                 ! Nominal phase-to-phase voltage for secondary windings
+var @kVs_aux_pp=0.12                ! Nominal phase-to-phase voltage for STload element
+var @kVs_prim_pn=5.773502691896258  ! Nominal phase-to-neutral voltage for primary windings
+var @kVs_sec_pn=0.23094010767585033 ! Nominal phase-to-neutral voltage for secondary windings
+var @kVs_aux_pn=0.06928203230275509 ! Nominal phase-to-neutral voltage for auxiliary windings
+
+var @kVAs_prim=266.6666666666667    ! Nominal S for primary windings
+var @kVAs_sec=266.6666666666667     ! Nominal S for secondary windings
+var @kVAs_aux=266.6666666666667     ! Nominal S for auxiliary windings
+
+
+
+! THREE-WINDING TRANSFORMER (for 1-phase devices, the voltage is generally defined to match the voltage across the two terminals of the device)
+
+New XfmrCode.3winding phases=1 windings=3 X12=0.001 X23=0.001 X13=0.001 %Noloadloss=0.08125 %Loadloss=0.875
+!New XfmrCode.3winding phases=1 windings=3 X12=3.5 X23=5.0 X13=1.3 %Noloadloss=0.08125 %Loadloss=0.875
+~ Wdg=1   Conn=Delta        kV=@kVs_prim_pp     kVA=@kVAs_prim
+~ Wdg=2   Conn=Wye          kV=@kVs_sec_pn      kVA=@kVAs_sec
+~ Wdg=3   Conn=Delta        kV=@kVs_aux_pp      kVA=@kVAs_aux
+
+New Transformer.Trafo1 xfmrcode=3winding
+~ wdg=1 bus=primaryWdg.1.2 wdg=2 bus=secondaryWdg.1.11 wdg=3 bus=auxiliaryWdg.1.2
+
+New Transformer.Trafo2 xfmrcode=3winding
+~ wdg=1 bus=primaryWdg.2.3 wdg=2 bus=secondaryWdg.2.22 wdg=3 bus=auxiliaryWdg.2.3
+
+New Transformer.Trafo3 xfmrcode=3winding
+~ wdg=1 bus=primaryWdg.3.1 wdg=2 bus=secondaryWdg.3.33 wdg=3 bus=auxiliaryWdg.3.1
+
+New LineCode.IdealLine nphases=3 R0=1e-6 R1=1e-6 X0=1e-6 X1=1e-6 C0=1e-6 C1=1e-6 Units=m
+
+New Line.HTline1 Bus1=primary Bus2=primaryWdg Linecode=IdealLine Length=0.1 phases=3
+New Line.HTline2 Bus1=secondaryWdg Bus2=secondary Linecode=IdealLine Length=0.1 phases=3
+New Line.HTline3 Bus1=auxiliaryWdg Bus2=STloadsBus Linecode=IdealLine Length=0.1 phases=3
+New Line.HTline4 Bus1=STvsourcesBus Bus2=secondaryWdg.11.22.33 Linecode=IdealLine Length=0.1 phases=3
+
+
+! BACK-TO-BACK CONVERTER
+
+! STvsources (BtB's inverter module) - Three single-phase Vsources with its BasekV = phase voltage (for 1-phase devices, the voltage is generally defined to match the voltage across the two terminals of the device)
+New Vsource.STvsource1 Bus1=STvsourcesBus.1 Bus2=STvsourcesBus.0 BasekV=@kVs_aux_pn pu=0.0 Angle=30.0 Frequency=50.0 Phases=1 Isc1=1e12 Isc3=1e12
+New Vsource.STvsource2 Bus1=STvsourcesBus.2 Bus2=STvsourcesBus.0 BasekV=@kVs_aux_pn pu=0.0 Angle=-90.0 Frequency=50.0 Phases=1 Isc1=1e12 Isc3=1e12
+New Vsource.STvsource3 Bus1=STvsourcesBus.3 Bus2=STvsourcesBus.0 BasekV=@kVs_aux_pn pu=0.0 Angle=150.0 Frequency=50.0 Phases=1 Isc1=1e12 Isc3=1e12
+
+! STloads (BtB's rectifier module) In this case it is a three-phase element, so its voltage (kv) is defined using phase-to-phase voltage
+New Load.STload1 Bus1=STloadsBus.1.2 Phases=1 Kv=@kVs_aux_pp Kw=0.0 Kvar=0.0 model=1 Vminpu=0.8 Vmaxpu=1.2
+New Load.STload2 Bus1=STloadsBus.2.3 Phases=1 Kv=@kVs_aux_pp Kw=0.0 Kvar=0.0 model=1 Vminpu=0.8 Vmaxpu=1.2
+New Load.STload3 Bus1=STloadsBus.3.1 Phases=1 Kv=@kVs_aux_pp Kw=0.0 Kvar=0.0 model=1 Vminpu=0.8 Vmaxpu=1.2
+
+
+! DOWNSTREAM NETWORK
+New Line.Feeder1_LINE1 Bus1=secondary Bus2=Feeder1_17 Linecode=IdealLine Length=1 phases=3
+
+New Load.Feeder1_LOAD1 Phases=1 Bus1=Feeder1_17.1 kV=@kVs_sec_pn kW=0.0 Kvar=0.0 Model=1 Vminpu=0.8 Vmaxpu=1.2
+New Load.Feeder1_LOAD2 Phases=1 Bus1=Feeder1_17.2 kV=@kVs_sec_pn kW=0.0 Kvar=0.0 Model=1 Vminpu=0.8 Vmaxpu=1.2
+New Load.Feeder1_LOAD3 Phases=1 Bus1=Feeder1_17.3 kV=@kVs_sec_pn kW=0.0 Kvar=0.0 Model=1 Vminpu=0.8 Vmaxpu=1.2
+
+
+! MONITORS
+
+! Three-winding transformer monitors
+New Monitor.Trafo_prim-VI Line.HTline1 Terminal=1 mode=0 VIpolar=Yes
+New Monitor.Trafo_prim-PQ Line.HTline1 Terminal=1 mode=1 ppolar=no
+New Monitor.Trafo_sec-VI Line.HTline2 Terminal=1 mode=0 VIpolar=Yes
+New Monitor.Trafo_sec-PQ Line.HTline2 Terminal=1 mode=1 ppolar=no
+New Monitor.Trafo_aux-VI Line.HTline3 Terminal=1 mode=0 VIpolar=Yes
+New Monitor.Trafo_aux-PQ Line.HTline3 Terminal=1 mode=1 ppolar=no
+
+! STvsources monitors
+New Monitor.STvsources-VI Line.HTline4 Terminal=1 mode=0 VIpolar=Yes
+New Monitor.STvsources-PQ Line.HTline4 Terminal=1 mode=1 ppolar=no
+
+! STloads monitors
+New Monitor.STloads-VI Line.HTline3 Terminal=2 mode=0 VIpolar=Yes
+New Monitor.STloads-PQ Line.HTline3 Terminal=2 mode=1 ppolar=no
+
+! Loads monitors
+New Monitor.Feeder1_LOAD1-VI Load.Feeder1_LOAD1 Terminal=1 mode=0 VIpolar=Yes
+New Monitor.Feeder1_LOAD1-PQ Load.Feeder1_LOAD1 Terminal=1 mode=1 ppolar=no
+New Monitor.Feeder1_LOAD2-VI Load.Feeder1_LOAD2 Terminal=1 mode=0 VIpolar=Yes
+New Monitor.Feeder1_LOAD2-PQ Load.Feeder1_LOAD2 Terminal=1 mode=1 ppolar=no
+New Monitor.Feeder1_LOAD3-VI Load.Feeder1_LOAD3 Terminal=1 mode=0 VIpolar=Yes
+New Monitor.Feeder1_LOAD3-PQ Load.Feeder1_LOAD3 Terminal=1 mode=1 ppolar=no

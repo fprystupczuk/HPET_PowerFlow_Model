@@ -1,0 +1,27 @@
+! PET model taken from Guerra, G. and Martinez-Velasco, J. "A Solid State Transformer Model for Power FlowCalculations". International Journal of Electrical Power and Energy Systems. 2017.
+
+var @kVs_p = 10.0               ! Nominal phase-to-phase (delta) voltage for primary side
+var @kVs_s = 0.23094011         ! Nominal phase-to-neutral (wye) voltage for secondary side
+
+
+! LOAD (primary side) In this case it is a three-phase delta element, so its voltage (kv) is defined using phase-to-phase voltage
+
+New Load.STload Bus1=primary Phases=3 Kv=@kVs_p Kw=0.0 Pf=1.0 model=1 Conn=delta
+New Monitor.STload-VI Load.STload Terminal=1 mode=0 VIpolar=Yes
+New Monitor.STload-PQ Load.STload Terminal=1 mode=1 ppolar=no
+
+
+! VSOURCE (secondary side)
+
+! Three single-phase Vsources with its BasekV = phase voltage (for 1-phase devices, the voltage is generally defined to match the voltage across the two terminals of the device)
+New Vsource.STvsource1 Bus1=secondary.1 Bus2=secondary.0 BasekV=@kVs_s pu=1.0 Angle=0.0 Frequency=50.0 Phases=1 Isc1=99999999999 Isc3=99999999999
+New Monitor.STvsource1-VI Vsource.STvsource1 Terminal=1 mode=0 VIpolar=Yes
+New Monitor.STvsource1-PQ Vsource.STvsource1 Terminal=1 mode=1 ppolar=no
+
+New Vsource.STvsource2 Bus1=secondary.2 Bus2=secondary.0 BasekV=@kVs_s pu=1.0 Angle=120.0 Frequency=50.0 Phases=1 Isc1=99999999999 Isc3=99999999999
+New Monitor.STvsource2-VI Vsource.STvsource2 Terminal=1 mode=0 VIpolar=Yes
+New Monitor.STvsource2-PQ Vsource.STvsource2 Terminal=1 mode=1 ppolar=no
+
+New Vsource.STvsource3 Bus1=secondary.3 Bus2=secondary.0 BasekV=@kVs_s pu=1.0 Angle=-120.0 Frequency=50.0 Phases=1 Isc1=99999999999 Isc3=99999999999
+New Monitor.STvsource3-VI Vsource.STvsource3 Terminal=1 mode=0 VIpolar=Yes
+New Monitor.STvsource3-PQ Vsource.STvsource3 Terminal=1 mode=1 ppolar=no
